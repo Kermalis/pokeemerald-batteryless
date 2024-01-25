@@ -2,7 +2,7 @@
 @ It's populated by gbafix using data provided in the Makefile.
 
 Start::
-	b Init
+	b Batteryless_Init_ARM
 
 RomHeaderNintendoLogo::
 	.space 156

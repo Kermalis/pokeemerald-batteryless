@@ -15,6 +15,7 @@ MEMORY
 
 __anim_mon_load_address = 0x8b00000;
 __gfx_load_address = 0x8c00000;
+__batteryless_address = 0x8fa0000;
 
 SECTIONS {
 
@@ -1311,6 +1312,13 @@ SECTIONS {
     ALIGN(4)
     {
         src/graphics.o(.rodata);
+    } > ROM =0
+
+    batteryless_code __batteryless_address :
+    ALIGN(4)
+    {
+        src/_batteryless_init.o(.text);
+        src/_batteryless.o(.text);
     } > ROM =0
 
     extra :
