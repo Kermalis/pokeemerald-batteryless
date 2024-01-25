@@ -37,6 +37,7 @@
 #include "title_screen.h"
 #include "window.h"
 #include "mystery_gift_menu.h"
+#include "_batteryless.h"
 
 /*
  * Main menu state machine
@@ -644,7 +645,11 @@ static void Task_MainMenuCheckSaveFile(u8 taskId)
                 tMenuType = HAS_SAVED_GAME;
                 if (IsMysteryGiftEnabled())
                     tMenuType++;
+#ifdef BATTERYLESS
+                gTasks[taskId].func = Task_DisplayMainMenu;
+#else
                 gTasks[taskId].func = Task_MainMenuCheckBattery;
+#endif
                 break;
             case SAVE_STATUS_CORRUPT:
                 CreateMainMenuErrorWindow(gText_SaveFileErased);
@@ -661,7 +666,11 @@ static void Task_MainMenuCheckSaveFile(u8 taskId)
             case SAVE_STATUS_EMPTY:
             default:
                 tMenuType = HAS_NO_SAVED_GAME;
+#ifdef BATTERYLESS
+                gTasks[taskId].func = Task_DisplayMainMenu;
+#else
                 gTasks[taskId].func = Task_MainMenuCheckBattery;
+#endif
                 break;
             case SAVE_STATUS_NO_FLASH:
                 CreateMainMenuErrorWindow(gJPText_No1MSubCircuit);
@@ -698,7 +707,11 @@ static void Task_WaitForSaveFileErrorWindow(u8 taskId)
     {
         ClearWindowTilemap(7);
         ClearMainMenuWindowTilemap(&sWindowTemplates_MainMenu[7]);
+#ifdef BATTERYLESS
+        gTasks[taskId].func = Task_DisplayMainMenu;
+#else
         gTasks[taskId].func = Task_MainMenuCheckBattery;
+#endif
     }
 }
 
