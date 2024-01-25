@@ -1,5 +1,6 @@
 #include "gba/gba.h"
 #include "gba/flash_internal.h"
+#include "_batteryless.h"
 
 static u8 sTimerNum;
 static u16 sTimerCount;
@@ -21,10 +22,21 @@ void SetReadFlash1(u16 *dest);
 
 void SwitchFlashBank(u8 bankNum)
 {
+#ifdef BATTERYLESS
+    BATTERYLESS_NOP_2; // 2E185C: setup
+
+    BATTERYLESS_NOP_3; // 2E1860: 0xAA write
+    BATTERYLESS_NOP_3; // 2E1866: 0x55 write
+    BATTERYLESS_NOP_2; // 2E186C: 0xB0 write
+    BATTERYLESS_NOP_3; // 2E1870: bankNum write
+
+    BATTERYLESS_NOP_4; // 2E1876: exit + consts
+#else
     FLASH_WRITE(0x5555, 0xAA);
     FLASH_WRITE(0x2AAA, 0x55);
     FLASH_WRITE(0x5555, 0xB0);
     FLASH_WRITE(0x0000, bankNum);
+#endif
 }
 
 #define DELAY()                  \
@@ -36,6 +48,35 @@ do {                             \
 
 u16 ReadFlashId(void)
 {
+#ifdef BATTERYLESS
+    BATTERYLESS_NOP_2; // 2E1880: setup
+
+    BATTERYLESS_NOP_3; // 2E1884: SetReadFlash1 call
+    BATTERYLESS_NOP_2; // 2E188A: readFlash1 set
+    BATTERYLESS_NOP_3; // 2E188E: 0xAA write
+    BATTERYLESS_NOP_3; // 2E1894: 0x55 write
+    BATTERYLESS_NOP_2; // 2E189A: 0x90 write
+
+    BATTERYLESS_NOP_4; // 2E189E: delay setup
+    BATTERYLESS_NOP_7; // 2E18A6: consts
+
+    BATTERYLESS_NOP_6; // 2E18B4: delay
+    BATTERYLESS_NOP_5; // 2E18C0: first flashId set
+    BATTERYLESS_NOP_7; // 2E18CA: second flashId set
+    BATTERYLESS_NOP_3; // 2E18D8: 0xAA write
+    BATTERYLESS_NOP_3; // 2E18DE: 0x55 write
+    BATTERYLESS_NOP_2; // 2E18E4: 0xF0 write
+    BATTERYLESS_NOP; // 2E18E8: 0xF0 write
+
+    BATTERYLESS_NOP_4; // 2E18EA: delay setup
+    BATTERYLESS_NOP_9; // 2E18F2: consts
+
+    BATTERYLESS_NOP_6; // 2E1904: delay
+
+    BATTERYLESS_NOP_2; // 2E1910: exit
+
+    return 0x1362; // ???
+#else
     u16 flashId;
     u16 readFlash1Buffer[0x20];
     u8 (*readFlash1)(u8 *);
@@ -60,6 +101,7 @@ u16 ReadFlashId(void)
     DELAY();
 
     return flashId;
+#endif
 }
 
 void FlashTimerIntr(void)
