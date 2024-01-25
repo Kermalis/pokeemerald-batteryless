@@ -4,7 +4,7 @@
 
 NAKED void Batteryless_Init(void)
 {
-	//u16 test = *((vu16*)0x8FC000);
+	//u16 test = *((vu16*)DEST_SAVE_ADDR);
 	s32 i;
 	vu8* srcAddr;
 	vu8* sramAddr;
