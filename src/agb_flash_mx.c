@@ -140,7 +140,8 @@ try_erase:
 
     numTries++;
 
-    BATTERYLESS_NOP_2; // 2E1FA4: old "goto try_erase"
+    // Need to recover 4 lost bytes to maintain original size
+    BATTERYLESS_NOP_2;
 
     goto try_erase;
 
@@ -212,10 +213,20 @@ u16 ProgramFlashByte_MX(u16 sectorNum, u32 offset, u8 data)
 
     REG_WAITCNT = (REG_WAITCNT & ~WAITCNT_SRAM_MASK) | gFlash->wait[0];
 
+#ifdef BATTERYLESS
+    BATTERYLESS_NOP_3; // 2E202A: 0xAA write
+    BATTERYLESS_NOP_3; // 2E2030: 0x55 write
+    BATTERYLESS_NOP_2; // 2E2036: 0xA0 write
+    *addr = data;
+
+    // Need to recover 8 lost bytes to maintain original size
+    BATTERYLESS_NOP_4;
+#else
     FLASH_WRITE(0x5555, 0xAA);
     FLASH_WRITE(0x2AAA, 0x55);
     FLASH_WRITE(0x5555, 0xA0);
     *addr = data;
+#endif
 
     return WaitForFlashWrite(1, addr, data);
 }
