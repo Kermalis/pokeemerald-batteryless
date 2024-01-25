@@ -100,6 +100,56 @@ u16 EraseFlashChip_MX(void)
 }
 #endif
 
+#ifdef BATTERYLESS
+u16 EraseFlashSector_MX(u16 sectorNum)
+{
+    u16 numTries;
+    u16 result;
+    u8 *addr;
+    u16 readFlash1Buffer[0x20];
+    s32 i;
+
+    if (sectorNum >= gFlash->sector.count)
+        return 0x80FF;
+
+    SwitchFlashBank(sectorNum / SECTORS_PER_BANK);
+    sectorNum %= SECTORS_PER_BANK;
+
+    numTries = 0;
+
+try_erase:
+    REG_WAITCNT = (REG_WAITCNT & ~WAITCNT_SRAM_MASK) | gFlash->wait[0];
+
+    addr = FLASH_BASE + (sectorNum << gFlash->sector.shift);
+
+    for (i = 0; i < 0x1000; i++)
+    {
+        addr[i] = 0xFF;
+    }
+    BATTERYLESS_NOP; // 2E1F6E: 0x80 write
+    BATTERYLESS_NOP; // 2E1F70: 0xAA write
+    BATTERYLESS_NOP; // 2E1F72: 0x55 write
+    BATTERYLESS_NOP_2; // 2E1F74: 0x30 write
+
+    SetReadFlash1(readFlash1Buffer);
+
+    result = WaitForFlashWrite(2, addr, 0xFF);
+
+    if (!(result & 0xA000) || numTries > 3)
+        goto done;
+
+    numTries++;
+
+    BATTERYLESS_NOP_2; // 2E1FA4: old "goto try_erase"
+
+    goto try_erase;
+
+done:
+    REG_WAITCNT = (REG_WAITCNT & ~WAITCNT_SRAM_MASK) | WAITCNT_SRAM_8;
+
+    return result;
+}
+#else
 u16 EraseFlashSector_MX(u16 sectorNum)
 {
     u16 numTries;
@@ -143,6 +193,7 @@ done:
 
     return result;
 }
+#endif
 
 u16 ProgramFlashByte_MX(u16 sectorNum, u32 offset, u8 data)
 {
