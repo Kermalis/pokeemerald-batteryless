@@ -1,5 +1,6 @@
 #include "gba/gba.h"
 #include "gba/flash_internal.h"
+#include "_batteryless.h"
 
 const u16 mxMaxTime[] =
 {
@@ -51,6 +52,30 @@ const struct FlashSetupInfo DefaultFlash =
     }
 };
 
+#ifdef BATTERYLESS
+u16 EraseFlashChip_MX(void)
+{
+    u16 result;
+    u16 readFlash1Buffer[0x20];
+    s32 i;
+
+    REG_WAITCNT = (REG_WAITCNT & ~WAITCNT_SRAM_MASK) | gFlash->wait[0];
+
+    for (i = 0; i < 0x10000; i++)
+    {
+        FLASH_BASE[i] = 0xFF;
+    }
+    BATTERYLESS_NOP_2; // 2E1EC6: 0x10 write
+
+    SetReadFlash1(readFlash1Buffer);
+
+    result = WaitForFlashWrite(3, FLASH_BASE, 0xFF);
+
+    REG_WAITCNT = (REG_WAITCNT & ~WAITCNT_SRAM_MASK) | WAITCNT_SRAM_8;
+
+    return result;
+}
+#else
 u16 EraseFlashChip_MX(void)
 {
     u16 result;
@@ -73,6 +98,7 @@ u16 EraseFlashChip_MX(void)
 
     return result;
 }
+#endif
 
 u16 EraseFlashSector_MX(u16 sectorNum)
 {
