@@ -233,10 +233,20 @@ u16 ProgramFlashByte_MX(u16 sectorNum, u32 offset, u8 data)
 
 static u16 ProgramByte(u8 *src, u8 *dest)
 {
+#ifdef BATTERYLESS
+    BATTERYLESS_NOP_3; // 2E2076: 0xAA write
+    BATTERYLESS_NOP_3; // 2E207C: 0x55 write
+    BATTERYLESS_NOP_2; // 2E2082: 0xA0 write
+    *dest = *src;
+
+    // Need to recover 10 lost bytes to maintain original size
+    BATTERYLESS_NOP_5;
+#else
     FLASH_WRITE(0x5555, 0xAA);
     FLASH_WRITE(0x2AAA, 0x55);
     FLASH_WRITE(0x5555, 0xA0);
     *dest = *src;
+#endif
 
     return WaitForFlashWrite(1, dest, *src);
 }
